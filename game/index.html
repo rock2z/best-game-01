@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aureole</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #07010f;
+    overflow: hidden;
+  }
+  #aureole {
+    position: absolute;
+    display: block;
+    background: #07010f;
+    touch-action: none;
+  }
+  #status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<canvas id="aureole" width="1280" height="720" aria-label="Aureole. Fly the Wick, aim with the mouse, and cross your gold trail to seal a ring."></canvas>
+<p id="status" role="status" aria-live="polite">Aureole is loading.</p>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
