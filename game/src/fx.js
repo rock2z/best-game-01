@@ -1,19 +1,19 @@
 // Particles, rising numbers, and the decay of shake and flashes.
-const PARTICLE_CAP = 420;
+const PARTICLE_CAP = 760;
 
 export function burst(world, x, y, color, count, speed) {
   const rng = world.rng;
   for (let i = 0; i < count; i += 1) {
     const angle = rng() * Math.PI * 2;
-    const fast = speed * (0.25 + rng() * 0.85);
+    const fast = speed * (0.55 + rng() * 0.7);
     world.particles.push({
       x,
       y,
       vx: Math.cos(angle) * fast,
       vy: Math.sin(angle) * fast,
       age: 0,
-      life: 0.32 + rng() * 0.55,
-      size: 1.6 + rng() * 4.2,
+      life: 0.55 + rng() * 0.55,
+      size: 1.5 + rng() * 2.6,
       color,
       spin: rng() * Math.PI,
       spinRate: (rng() - 0.5) * 10,

@@ -159,6 +159,7 @@ export function spawnShard(world, x, y) {
     spinRate: 1.2 + world.rng() * 1.8,
     color: world.rng() < 0.55 ? '#ff3d8a' : '#ff6a2a',
     orbit: angle,
+    hist: [],
   });
 }
 
@@ -175,6 +176,7 @@ export function spawnBell(world, x, y) {
     spinRate: 0.7,
     color: '#5dfff0',
     orbit: world.rng() * Math.PI * 2,
+    hist: [],
   });
 }
 
@@ -192,6 +194,7 @@ export function spawnHeart(world, x, y) {
     spinRate: 0.42,
     color: '#ffb03a',
     orbit: 0,
+    hist: [],
   });
 }
 
@@ -214,6 +217,7 @@ function stepDemo(world, dt) {
   recordTrail(world);
   rememberHistory(world);
   trySeal(world);
+  burst(world, world.player.x, world.player.y, world.rng() < 0.45 ? '#fff6d0' : '#ff6a2a', 2, 64);
   for (let i = 0; i < world.ornaments.length; i += 1) {
     world.ornaments[i].angle += world.ornaments[i].speed * dt;
   }
@@ -341,7 +345,10 @@ function applySeal(world, poly) {
       gained += points * world.chorus;
       popped += 1;
       if (foe.kind === 'heart') heartHit = true;
-      burst(world, foe.x, foe.y, foe.color, foe.kind === 'heart' ? 96 : 34, foe.kind === 'heart' ? 760 : 300);
+      const bits = foe.kind === 'heart' ? 140 : foe.kind === 'bell' ? 40 : 22;
+      const kick = foe.kind === 'heart' ? 720 : foe.kind === 'bell' ? 460 : 420;
+      burst(world, foe.x, foe.y, foe.color, bits, kick);
+      burst(world, foe.x, foe.y, '#fff6e0', foe.kind === 'heart' ? 28 : 10, kick * 0.55);
       world.enemies.splice(i, 1);
     }
     gained += Math.floor(radius * 1.6) * world.chorus;
@@ -377,7 +384,7 @@ function applySeal(world, poly) {
     chorus: decorative ? 1 : world.chorus,
   });
   world.shake = decorative ? 2.2 : Math.min(15, 5 + radius / 48);
-  world.flash = decorative ? 0.1 : 0.26;
+    world.flash = decorative ? 0.08 : 0.4;
   world.pulse = 1;
   world.trail = [{ x: world.player.x, y: world.player.y, t: world.time }];
 }
@@ -447,6 +454,9 @@ function stepEnemies(world, dt) {
   for (let i = 0; i < world.enemies.length; i += 1) {
     const foe = world.enemies[i];
     foe.spin += foe.spinRate * dt;
+    if (!foe.hist) foe.hist = [];
+    foe.hist.push({ x: foe.x, y: foe.y });
+    if (foe.hist.length > 5) foe.hist.shift();
     if (foe.kind === 'heart') continue;
     if (foe.kind === 'bell') {
       foe.orbit += dt * (0.65 + world.wave * 0.12);

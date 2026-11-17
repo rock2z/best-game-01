@@ -17,9 +17,9 @@ export function drawFrame(ctx, world) {
   drawTrail(ctx, world);
   drawSeals(ctx, world);
   drawEnemies(ctx, world);
+  drawParticles(ctx, world);
   drawShots(ctx, world);
   drawShip(ctx, world);
-  drawParticles(ctx, world);
   if (world.mode === 'play' || world.mode === 'title') drawFloaters(ctx, world);
   ctx.restore();
   drawVignette(ctx, world);
@@ -42,21 +42,34 @@ export function drawFrame(ctx, world) {
 }
 
 export function drawTitleScreen(ctx, world) {
-  drawTracked(ctx, 'AUREOLE', 640, 188, 96, {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const bloom = ctx.createRadialGradient(640, 300, 20, 640, 300, 340);
+  bloom.addColorStop(0, 'rgba(255, 170, 60, 0.28)');
+  bloom.addColorStop(0.45, 'rgba(255, 60, 120, 0.08)');
+  bloom.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = bloom;
+  ctx.fillRect(0, 0, TUNE.viewW, TUNE.viewH);
+  ctx.restore();
+
+  if (world.bestScore > 0) {
+    text(ctx, `BEST  ${formatScore(world.bestScore)}`, 640, 36, { size: 16, fill: '#cbb8a0', font: SANS, tracking: 2 });
+  }
+  drawTracked(ctx, 'AUREOLE', 640, 176, 68, {
     font: SERIF,
-    fill: goldGradient(ctx, 140, 236),
+    fill: goldGradient(ctx, 140, 210),
     stroke: '#1a0708',
-    strokeWidth: 10,
+    strokeWidth: 8,
     tracking: 10,
-    glow: 'rgba(255, 150, 40, 0.9)',
+    glow: 'rgba(255, 150, 40, 0.95)',
   });
-  drawTracked(ctx, 'SEAL THE CINDERWELL', 640, 258, 22, {
+  drawTracked(ctx, 'SEAL THE CINDERWELL', 640, 222, 18, {
     font: SANS,
     fill: '#ffd78a',
-    tracking: 6,
+    tracking: 5,
   });
 
-  panel(ctx, 300, 300, 680, 268);
+  panel(ctx, 430, 248, 420, 156);
   const rows = [
     ['WASD  /  ARROWS', 'Fly the Wick'],
     ['MOUSE', 'Aim the lance'],
@@ -64,39 +77,42 @@ export function drawTitleScreen(ctx, world) {
     ['CROSS YOUR TRAIL', 'Seal a ring'],
   ];
   for (let i = 0; i < rows.length; i += 1) {
-    const y = 352 + i * 46;
-    drawTracked(ctx, rows[i][0], 420, y, 22, { font: SANS, fill: '#ffc14a', tracking: 1.5, align: 'left' });
-    drawTracked(ctx, rows[i][1], 760, y, 22, { font: SANS, fill: '#fff6e8', tracking: 0.4, align: 'left' });
+    const y = 276 + i * 28;
+    drawTracked(ctx, rows[i][0], 456, y, 16, { font: SANS, fill: '#ffc14a', tracking: 1, align: 'left' });
+    drawTracked(ctx, rows[i][1], 690, y, 16, { font: SANS, fill: '#fff6e8', tracking: 0.2, align: 'left' });
   }
-  text(ctx, 'A chorus of ×4 or higher mends one hull.', 640, 538, {
-    size: 18,
+  text(ctx, 'A ×4 chorus mends one hull.', 640, 388, {
+    size: 15,
     fill: '#9dffce',
     font: SANS,
   });
 
-  text(ctx, 'Seal the Cinder Heart inside a ring before your hull breaks.', 640, 604, {
-    size: 20,
+  text(ctx, 'Seal the Cinder Heart inside a ring before your hull breaks.', 640, 560, {
+    size: 18,
     fill: '#fff6e8',
     font: SANS,
   });
+  drawTracked(ctx, 'VERSE I   ·   A HYMN FOR A DYING STAR', 640, 596, 13, {
+    font: SANS,
+    fill: '#cbb8a0',
+    tracking: 3,
+  });
+
   const pulse = 0.55 + 0.45 * Math.sin(world.time * 3.2);
-  text(ctx, 'CLICK OR PRESS ENTER', 640, 662, {
-    size: 28,
-    fill: `rgba(255, 214, 130, ${0.45 + pulse * 0.55})`,
+  promptPlate(ctx, 360, 628, 560, 64);
+  text(ctx, 'CLICK OR PRESS ENTER', 640, 660, {
+    size: 26,
+    fill: `rgba(255, 226, 150, ${0.55 + pulse * 0.45})`,
     font: SANS,
     stroke: '#14060a',
     strokeWidth: 5,
   });
-  if (world.bestScore > 0) {
-    text(ctx, `BEST  ${formatScore(world.bestScore)}`, 640, 86, { size: 16, fill: '#cbb8a0', font: SANS, tracking: 2 });
-  }
 }
 
 export function drawPlayHud(ctx, world) {
-  ctx.fillStyle = 'rgba(6, 1, 14, 0.62)';
-  ctx.fillRect(0, 0, TUNE.viewW, 96);
-  ctx.fillStyle = 'rgba(255, 193, 74, 0.85)';
-  ctx.fillRect(0, 96, TUNE.viewW, 2);
+  ctx.fillStyle = 'rgba(6, 1, 14, 0.72)';
+  ctx.fillRect(0, 0, TUNE.viewW, 100);
+  goldFrame(ctx, 18, 10, TUNE.viewW - 36, 80);
 
   text(ctx, 'SCORE', 78, 28, { size: 14, fill: '#cbb8a0', font: SANS, align: 'left' });
   text(ctx, formatScore(world.score), 76, 62, {
@@ -123,18 +139,11 @@ export function drawPlayHud(ctx, world) {
     drawPip(ctx, 1060 + i * 32, 62, i < world.hull);
   }
 
-  ctx.fillStyle = 'rgba(6, 1, 14, 0.62)';
-  ctx.fillRect(0, 648, TUNE.viewW, 72);
-  ctx.fillStyle = 'rgba(255, 193, 74, 0.85)';
-  ctx.fillRect(0, 648, TUNE.viewW, 2);
-  const chorusHot = world.chorus > 1 && world.time <= world.chorusUntil;
-  text(ctx, chorusHot ? `CHORUS  ×${world.chorus}` : 'CHORUS  ×1', 220, 684, {
-    size: chorusHot ? 28 : 20,
-    fill: chorusHot ? '#fff1c4' : '#cbb8a0',
-    font: SANS,
-    align: 'left',
-  });
-  text(ctx, world.objective, 860, 684, { size: 22, fill: '#fff6e8', font: SANS });
+  ctx.fillStyle = 'rgba(6, 1, 14, 0.78)';
+  ctx.fillRect(0, 632, TUNE.viewW, 88);
+  goldFrame(ctx, 18, 642, TUNE.viewW - 36, 64);
+  drawChorusMeter(ctx, world);
+  text(ctx, world.objective, 980, 674, { size: 18, fill: '#fff6e8', font: SANS });
 
   if (world.banner && world.time < world.bannerUntil) {
     const left = world.bannerUntil - world.time;
@@ -215,29 +224,78 @@ function drawCallout(ctx, callout) {
 }
 
 function drawBackdrop(ctx, world) {
-  const g = ctx.createRadialGradient(640, 380, 40, 640, 380, 820);
-  g.addColorStop(0, '#4a1434');
-  g.addColorStop(0.42, '#1a0a22');
-  g.addColorStop(1, '#07010f');
+  const g = ctx.createRadialGradient(640, 360, 40, 640, 380, 860);
+  g.addColorStop(0, '#5a1840');
+  g.addColorStop(0.38, '#1a0a24');
+  g.addColorStop(1, '#05010c');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, TUNE.viewW, TUNE.viewH);
-  for (let i = 0; i < 40; i += 1) {
-    const drift = (world.time * (12 + (i % 5) * 4) + i * 53) % 780;
-    const x = (i * 97 + world.time * (6 + (i % 4))) % 1280;
-    const y = 760 - drift;
-    ctx.globalAlpha = 0.35 + (i % 3) * 0.12;
-    ctx.fillStyle = i % 3 === 0 ? '#ffc14a' : '#ff8a5a';
+  drawGlassPanes(ctx, world);
+  drawShafts(ctx, world);
+  for (let i = 0; i < 56; i += 1) {
+    const drift = (world.time * (10 + (i % 6) * 5) + i * 47) % 820;
+    const x = (i * 83 + world.time * (4 + (i % 5)) * (i % 2 === 0 ? 1 : -1) + 1280) % 1280;
+    const y = 800 - drift;
+    const depth = i % 3;
+    ctx.globalAlpha = 0.25 + depth * 0.18;
+    ctx.fillStyle = i % 4 === 0 ? '#fff1c4' : i % 4 === 1 ? '#ff8a5a' : '#5dfff0';
     ctx.beginPath();
-    ctx.arc(x, y, i % 4 === 0 ? 2.2 : 1.2, 0, Math.PI * 2);
+    ctx.arc(x, y, depth === 0 ? 1.1 : 2.1, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
 
+function drawGlassPanes(ctx, world) {
+  const layers = [
+    { speed: 12, alpha: 0.09, color: '#ff3d8a', y: 70, h: 90 },
+    { speed: -18, alpha: 0.07, color: '#5dfff0', y: 250, h: 70 },
+    { speed: 22, alpha: 0.08, color: '#ffc14a', y: 470, h: 110 },
+  ];
+  for (let layer = 0; layer < layers.length; layer += 1) {
+    const pane = layers[layer];
+    ctx.save();
+    ctx.globalAlpha = pane.alpha;
+    ctx.fillStyle = pane.color;
+    for (let i = 0; i < 7; i += 1) {
+      const x = ((i * 220 + world.time * pane.speed) % 1600) - 180;
+      ctx.beginPath();
+      ctx.moveTo(x, pane.y);
+      ctx.lineTo(x + 90, pane.y - pane.h * 0.45);
+      ctx.lineTo(x + 160, pane.y + 10);
+      ctx.lineTo(x + 50, pane.y + pane.h * 0.55);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawShafts(ctx, world) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 4; i += 1) {
+    const x = 140 + i * 300 + Math.sin(world.time * 0.15 + i) * 24;
+    const g = ctx.createLinearGradient(x, 0, x + 40, 720);
+    g.addColorStop(0, 'rgba(255, 210, 120, 0.11)');
+    g.addColorStop(0.55, 'rgba(255, 120, 60, 0.03)');
+    g.addColorStop(1, 'rgba(255, 210, 120, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(x, -30);
+    ctx.lineTo(x + 46, -30);
+    ctx.lineTo(x + 120, 760);
+    ctx.lineTo(x - 36, 760);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function drawMandala(ctx, world) {
   const pulse = 1 + world.pulse * 0.04;
   ctx.save();
-  ctx.translate(640, 368);
+  ctx.translate(TUNE.haloX, TUNE.haloY);
   ctx.scale(pulse, pulse);
   ctx.rotate(world.time * 0.04);
   ctx.globalAlpha = 0.28;
@@ -261,7 +319,7 @@ function drawMandala(ctx, world) {
   }
   ctx.restore();
   ctx.beginPath();
-  ctx.arc(640, 368, 86, 0, Math.PI * 2);
+  ctx.arc(TUNE.haloX, TUNE.haloY, 86, 0, Math.PI * 2);
   ctx.strokeStyle = 'rgba(255, 193, 74, 0.2)';
   ctx.lineWidth = 2;
   ctx.stroke();
@@ -270,8 +328,8 @@ function drawMandala(ctx, world) {
 function drawOrnaments(ctx, world) {
   for (let i = 0; i < world.ornaments.length; i += 1) {
     const mark = world.ornaments[i];
-    const x = 640 + Math.cos(mark.angle) * mark.radius;
-    const y = 368 + Math.sin(mark.angle) * mark.radius * 0.62;
+    const x = TUNE.haloX + Math.cos(mark.angle) * mark.radius;
+    const y = TUNE.haloY + Math.sin(mark.angle) * mark.radius * 0.62;
     ctx.save();
     ctx.globalAlpha = 0.55;
     ctx.translate(x, y);
@@ -285,17 +343,23 @@ function drawOrnaments(ctx, world) {
 function drawTrail(ctx, world) {
   const trail = world.trail;
   if (trail.length < 2) return;
+  ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = 'rgba(255, 61, 138, 0.28)';
-  ctx.lineWidth = 14;
-  strokeTrail(ctx, trail, 3, 0);
-  ctx.strokeStyle = 'rgba(255, 193, 74, 0.92)';
-  ctx.lineWidth = 7;
-  strokeTrail(ctx, trail, 0, 0);
-  ctx.strokeStyle = '#fff6e0';
-  ctx.lineWidth = 2;
-  strokeTrail(ctx, trail, 0, 0);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = 'rgba(255, 40, 130, 0.55)';
+  ctx.lineWidth = 18;
+  strokeTrail(ctx, trail, -5);
+  ctx.strokeStyle = 'rgba(70, 255, 240, 0.38)';
+  ctx.lineWidth = 16;
+  strokeTrail(ctx, trail, 5);
+  ctx.strokeStyle = 'rgba(255, 196, 70, 0.95)';
+  ctx.lineWidth = 8;
+  strokeTrail(ctx, trail, 0);
+  ctx.strokeStyle = 'rgba(255, 250, 230, 0.95)';
+  ctx.lineWidth = 2.4;
+  strokeTrail(ctx, trail, 0);
+  ctx.restore();
 }
 
 function strokeTrail(ctx, trail, offset) {
@@ -329,6 +393,18 @@ function drawSeals(ctx, world) {
     ctx.strokeStyle = '#fff8e8';
     ctx.stroke();
     if (seal.fill > 0.1) {
+      const spread = Math.min(1, seal.age / 0.32);
+      for (let n = 0; n < 36; n += 1) {
+        const angle = (n / 36) * Math.PI * 2 + seal.age * 1.6;
+        const dist = seal.r * (0.16 + 0.78 * spread) * (0.42 + (n % 5) * 0.12);
+        ctx.save();
+        ctx.translate(seal.x + Math.cos(angle) * dist, seal.y + Math.sin(angle) * dist);
+        ctx.rotate(angle + n + seal.age * 4);
+        const w = 6 + (n % 4) * 5;
+        ctx.fillStyle = n % 3 === 0 ? '#5dfff0' : n % 3 === 1 ? '#ff3d8a' : '#ffe08a';
+        ctx.fillRect(-w, -2.2, w * 2, 4.4);
+        ctx.restore();
+      }
       ctx.lineWidth = 2;
       ctx.strokeStyle = 'rgba(255, 236, 190, 0.45)';
       for (let ray = 0; ray < 16; ray += 1) {
@@ -351,6 +427,7 @@ function drawSeals(ctx, world) {
 function drawEnemies(ctx, world) {
   for (let i = 0; i < world.enemies.length; i += 1) {
     const foe = world.enemies[i];
+    drawFoeTrail(ctx, foe);
     if (foe.kind === 'heart') drawHeart(ctx, foe, world);
     else if (foe.kind === 'bell') {
       glow(ctx, foe.x, foe.y, foe.r * 2.4, foe.color, 0.45);
@@ -370,38 +447,92 @@ function drawEnemies(ctx, world) {
   }
 }
 
+function drawFoeTrail(ctx, foe) {
+  const hist = foe.hist;
+  if (!hist || hist.length < 2 || foe.kind === 'heart') return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = foe.color;
+  ctx.lineCap = 'round';
+  ctx.globalAlpha = 0.45;
+  ctx.lineWidth = foe.kind === 'bell' ? 6 : 4;
+  ctx.beginPath();
+  ctx.moveTo(hist[0].x, hist[0].y);
+  for (let i = 1; i < hist.length; i += 1) ctx.lineTo(hist[i].x, hist[i].y);
+  ctx.lineTo(foe.x, foe.y);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawHeart(ctx, foe, world) {
-  glow(ctx, foe.x, foe.y, 150, '#ff6a2a', 0.55);
-  glow(ctx, foe.x, foe.y, 70, '#ffc14a', 0.8);
+  const pulse = 1 + Math.sin(world.time * 3.2) * 0.06;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const shaft = ctx.createLinearGradient(foe.x, foe.y - 420, foe.x, foe.y + 80);
+  shaft.addColorStop(0, 'rgba(255, 220, 140, 0)');
+  shaft.addColorStop(0.45, 'rgba(255, 140, 50, 0.28)');
+  shaft.addColorStop(1, 'rgba(255, 60, 40, 0)');
+  ctx.fillStyle = shaft;
+  ctx.beginPath();
+  ctx.moveTo(foe.x - 18, foe.y - 460);
+  ctx.lineTo(foe.x + 18, foe.y - 460);
+  ctx.lineTo(foe.x + 70, foe.y + 40);
+  ctx.lineTo(foe.x - 70, foe.y + 40);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  glow(ctx, foe.x, foe.y, 210 * pulse, '#ff3d1a', 0.45);
+  glow(ctx, foe.x, foe.y, 120 * pulse, '#ffb03a', 0.85);
+  glow(ctx, foe.x, foe.y, 48, '#fff6d0', 0.95);
+
   ctx.save();
   ctx.translate(foe.x, foe.y);
   ctx.rotate(foe.spin);
-  ctx.strokeStyle = '#ffd78a';
+  ctx.strokeStyle = '#ffe1a0';
   ctx.lineWidth = 3;
+  for (let i = 0; i < 10; i += 1) {
+    ctx.rotate(Math.PI / 5);
+    ctx.beginPath();
+    ctx.ellipse(62, 0, 36, 12, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.rotate(-foe.spin * 2.4);
+  ctx.strokeStyle = '#ff3d8a';
+  ctx.lineWidth = 2;
   for (let i = 0; i < 8; i += 1) {
     ctx.rotate(Math.PI / 4);
     ctx.beginPath();
-    ctx.ellipse(34, 0, 26, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(36, 0, 18, 7, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();
+
+  for (let i = 0; i < 12; i += 1) {
+    const angle = world.time * (i % 2 === 0 ? 0.9 : -0.6) + i;
+    const radius = 108 + (i % 3) * 16;
+    const x = foe.x + Math.cos(angle) * radius;
+    const y = foe.y + Math.sin(angle) * radius * 0.78;
+    glow(ctx, x, y, 12, i % 2 === 0 ? '#ffc14a' : '#ff3d8a', 0.9);
+  }
+
   ctx.beginPath();
-  ctx.arc(foe.x, foe.y, 22 + Math.sin(world.time * 4) * 2, 0, Math.PI * 2);
-  ctx.fillStyle = '#fff3c4';
+  ctx.arc(foe.x, foe.y, 26 + Math.sin(world.time * 5) * 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#fffaf0';
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(foe.x, foe.y, 78, 0, Math.PI * 2);
-  ctx.setLineDash([8, 8]);
-  ctx.strokeStyle = 'rgba(255, 193, 74, 0.7)';
+  ctx.arc(foe.x, foe.y, 168, 0, Math.PI * 2);
+  ctx.setLineDash([10, 8]);
+  ctx.strokeStyle = 'rgba(255, 210, 120, 0.85)';
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.setLineDash([]);
-  text(ctx, 'CINDER HEART', foe.x, foe.y + 96, {
-    size: 16,
+
+  promptPlate(ctx, foe.x - 92, foe.y + 132, 184, 32);
+  text(ctx, 'CINDER HEART', foe.x, foe.y + 148, {
+    size: 15,
     fill: '#fff1c4',
     font: SANS,
-    stroke: '#14060a',
-    strokeWidth: 4,
     tracking: 2,
   });
 }
@@ -413,9 +544,14 @@ function drawShots(ctx, world) {
     ctx.save();
     ctx.translate(shot.x, shot.y);
     ctx.rotate(ang);
-    glow(ctx, 0, 0, 16, '#fff1c4', 0.8);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = 'rgba(255, 50, 130, 0.9)';
+    ctx.fillRect(-34, -4, 26, 3);
+    ctx.fillStyle = 'rgba(80, 255, 240, 0.9)';
+    ctx.fillRect(-34, 1, 26, 3);
     ctx.fillStyle = '#fffef8';
-    ctx.fillRect(-16, -2, 22, 4);
+    ctx.fillRect(-26, -1.6, 34, 3.2);
+    glow(ctx, 4, 0, 14, '#fff1c4', 0.9);
     ctx.restore();
   }
 }
@@ -481,23 +617,31 @@ function drawKite(ctx, x, y, angle, alpha, ghost) {
 }
 
 function drawParticles(ctx, world) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < world.particles.length; i += 1) {
     const speck = world.particles[i];
     const fade = 1 - speck.age / speck.life;
     ctx.save();
-    ctx.globalAlpha = Math.max(0, fade);
     ctx.translate(speck.x, speck.y);
     ctx.rotate(speck.spin);
+    ctx.globalAlpha = Math.max(0, fade) * 0.45;
+    ctx.fillStyle = speck.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, speck.size * 1.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = Math.max(0, fade);
     ctx.fillStyle = speck.color;
     if (speck.shard) {
-      ctx.fillRect(-speck.size, -speck.size * 0.35, speck.size * 2, speck.size * 0.7);
+      ctx.fillRect(-speck.size * 1.35, -speck.size * 0.28, speck.size * 2.7, speck.size * 0.56);
     } else {
       ctx.beginPath();
-      ctx.arc(0, 0, speck.size, 0, Math.PI * 2);
+      ctx.arc(0, 0, Math.max(1.1, speck.size * 0.4), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
   }
+  ctx.restore();
 }
 
 function drawFloaters(ctx, world) {
@@ -581,6 +725,80 @@ function drawPip(ctx, x, y, filled) {
   ctx.strokeStyle = filled ? '#fff1c4' : 'rgba(255, 193, 74, 0.7)';
   ctx.stroke();
   ctx.restore();
+}
+
+function drawChorusMeter(ctx, world) {
+  const hot = world.chorus > 1 && world.time <= world.chorusUntil;
+  const mend = hot && world.chorus >= 4;
+  text(ctx, mend ? 'MEND READY' : 'CHORUS', 48, 658, {
+    size: 12,
+    fill: mend ? '#9dffce' : '#cbb8a0',
+    font: SANS,
+    align: 'left',
+    tracking: 1.6,
+  });
+  for (let i = 0; i < TUNE.chorusCap; i += 1) {
+    const lit = i < world.chorus;
+    const tip = lit && i === world.chorus - 1;
+    const x = 48 + i * 22;
+    const h = tip ? 22 : 16;
+    roundRect(ctx, x, 684 - h / 2, 14, h, 3);
+    ctx.fillStyle = lit ? (mend ? '#9dffce' : '#ffc14a') : 'rgba(255,255,255,0.08)';
+    ctx.fill();
+    ctx.lineWidth = 1.25;
+    ctx.strokeStyle = lit ? '#fff6d4' : 'rgba(255, 193, 74, 0.55)';
+    ctx.stroke();
+  }
+  text(ctx, `×${world.chorus}`, 48 + TUNE.chorusCap * 22 + 8, 684, {
+    size: hot ? 26 : 18,
+    fill: hot ? '#fff1c4' : '#cbb8a0',
+    font: SANS,
+    align: 'left',
+  });
+}
+
+function goldFrame(ctx, x, y, w, h) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255, 193, 74, 0.95)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(x, y + 18);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + 22, y);
+  ctx.moveTo(x + w - 22, y);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w, y + 18);
+  ctx.moveTo(x, y + h - 18);
+  ctx.lineTo(x, y + h);
+  ctx.lineTo(x + 22, y + h);
+  ctx.moveTo(x + w - 22, y + h);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x + w, y + h - 18);
+  ctx.stroke();
+  ctx.fillStyle = '#ffc14a';
+  const gems = [
+    [x + 8, y + 8],
+    [x + w - 8, y + 8],
+    [x + 8, y + h - 8],
+    [x + w - 8, y + h - 8],
+  ];
+  for (let i = 0; i < gems.length; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(gems[i][0], gems[i][1] - 5);
+    ctx.lineTo(gems[i][0] + 5, gems[i][1]);
+    ctx.lineTo(gems[i][0], gems[i][1] + 5);
+    ctx.lineTo(gems[i][0] - 5, gems[i][1]);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function promptPlate(ctx, x, y, w, h) {
+  roundRect(ctx, x, y, w, h, 10);
+  ctx.fillStyle = 'rgba(8, 3, 16, 0.88)';
+  ctx.fill();
+  goldFrame(ctx, x, y, w, h);
 }
 
 function panel(ctx, x, y, w, h) {
